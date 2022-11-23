@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
+//首页功能
 public class HomeController {
 
     @Autowired
