@@ -4,12 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Event {
-    private String topic;
-    private int userId;
-    private int entityType;
-    private int entityId;
-    private int entityUserId;
-    private Map<String, Object> data = new HashMap<>();
+
+    private String topic; // 事件类型
+    private int userId; // 事件由谁触发
+    private int entityType; // 实体类型
+    private int entityId; // 实体 id
+    private int entityUserId; // 实体的作者(该通知发送给他）
+    private Map<String, Object> data = new HashMap<>(); // 存储未来可能需要用到的数据
 
     public String getTopic() {
         return topic;
@@ -64,6 +65,4 @@ public class Event {
         this.data.put(key, value);
         return this;
     }
-
 }
-

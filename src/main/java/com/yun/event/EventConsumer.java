@@ -33,6 +33,11 @@ public class EventConsumer implements CommunityConstant {
     @Autowired
     private ElasticsearchService elasticsearchService;
 
+
+    /**
+     * 消费评论、点赞、关注事件
+     * @param record
+     */
     @KafkaListener(topics = {TOPIC_COMMENT, TOPIC_LIKE, TOPIC_FOLLOW})
     public void handleCommentMessage(ConsumerRecord record) {
         if (record == null || record.value() == null) {
@@ -46,7 +51,7 @@ public class EventConsumer implements CommunityConstant {
             return;
         }
 
-        // 发送站内通知
+        // 发送系统通知
         Message message = new Message();
         message.setFromId(SYSTEM_USER_ID);
         message.setToId(event.getEntityUserId());
@@ -58,7 +63,7 @@ public class EventConsumer implements CommunityConstant {
         content.put("entityType", event.getEntityType());
         content.put("entityId", event.getEntityId());
 
-        if (!event.getData().isEmpty()) {
+        if (!event.getData().isEmpty()) {// 存储 Event 中的 Data
             for (Map.Entry<String, Object> entry : event.getData().entrySet()) {
                 content.put(entry.getKey(), entry.getValue());
             }
@@ -83,7 +88,25 @@ public class EventConsumer implements CommunityConstant {
         }
 
         DiscussPost post = discussPostService.findDiscussPostById(event.getEntityId());
-        elasticsearchService.saveDiscussPost(post);
+        elasticsearchService.saveDiscusspost(post);
     }
+
+    // 消费删帖事件
+    @KafkaListener(topics = {TOPIC_DELETE})
+    public void handleDeleteMessage(ConsumerRecord record) {
+        if (record == null || record.value() == null) {
+            logger.error("消息的内容为空!");
+            return;
+        }
+
+        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+        if (event == null) {
+            logger.error("消息格式错误!");
+            return;
+        }
+
+        elasticsearchService.deleteDiscusspost(event.getEntityId());
+    }
+
 }
 

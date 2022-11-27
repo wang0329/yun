@@ -27,23 +27,41 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 搜索相关
+ */
 @Service
 public class ElasticsearchService {
 
     @Autowired
-    private DiscussPostRepository discussRepository;
+    private DiscussPostRepository discussPostRepository;
 
     @Autowired
-    private ElasticsearchTemplate elasticTemplate;
+    private ElasticsearchTemplate elasticsearchTemplate;
 
-    public void saveDiscussPost(DiscussPost post) {
-        discussRepository.save(post);
+    /**
+     * 将数据插入 Elasticsearch 服务器
+     * @param post
+     */
+    public void saveDiscusspost(DiscussPost post) {
+        discussPostRepository.save(post);
     }
 
-    public void deleteDiscussPost(int id) {
-        discussRepository.deleteById(id);
+    /**
+     * 将数据从 Elasticsearch 服务器中删除
+     * @param id
+     */
+    public void deleteDiscusspost(int id) {
+        discussPostRepository.deleteById(id);
     }
 
+    /**
+     * 分页搜索
+     * @param keyword 搜索的关键词
+     * @param current 当前页码（这里的 Page 是 Spring 提供的，而非我们自己实现的那个）
+     * @param limit 每页显示多少条数据
+     * @return
+     */
     public Page<DiscussPost> searchDiscussPost(String keyword, int current, int limit) {
         SearchQuery searchQuery = new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.multiMatchQuery(keyword, "title", "content"))
@@ -56,14 +74,16 @@ public class ElasticsearchService {
                         new HighlightBuilder.Field("content").preTags("<em>").postTags("</em>")
                 ).build();
 
-        return elasticTemplate.queryForPage(searchQuery, DiscussPost.class, new SearchResultMapper() {
+        return elasticsearchTemplate.queryForPage(searchQuery, DiscussPost.class, new SearchResultMapper() {
             @Override
-            public <T> AggregatedPage<T> mapResults(SearchResponse response, Class<T> aClass, Pageable pageable) {
-                SearchHits hits = response.getHits();
+            public <T> AggregatedPage<T> mapResults(SearchResponse searchResponse, Class<T> aClass, Pageable pageable) {
+                // 获取命中的数据
+                SearchHits hits = searchResponse.getHits();
                 if (hits.getTotalHits() <= 0) {
                     return null;
                 }
 
+                // 处理命中的数据
                 List<DiscussPost> list = new ArrayList<>();
                 for (SearchHit hit : hits) {
                     DiscussPost post = new DiscussPost();
@@ -89,7 +109,7 @@ public class ElasticsearchService {
                     String commentCount = hit.getSourceAsMap().get("commentCount").toString();
                     post.setCommentCount(Integer.valueOf(commentCount));
 
-                    // 处理高亮显示的结果
+                    // 处理高亮显示的内容
                     HighlightField titleField = hit.getHighlightFields().get("title");
                     if (titleField != null) {
                         post.setTitle(titleField.getFragments()[0].toString());
@@ -104,9 +124,10 @@ public class ElasticsearchService {
                 }
 
                 return new AggregatedPageImpl(list, pageable,
-                        hits.getTotalHits(), response.getAggregations(), response.getScrollId(), hits.getMaxScore());
+                        hits.getTotalHits(), searchResponse.getAggregations(), searchResponse.getScrollId(), hits.getMaxScore());
             }
         });
+
     }
 
 }

@@ -9,6 +9,7 @@ import com.yun.util.CommunityConstant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -17,6 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 搜索
+ */
 @Controller
 public class SearchController implements CommunityConstant {
 
@@ -29,12 +33,19 @@ public class SearchController implements CommunityConstant {
     @Autowired
     private LikeService likeService;
 
-    // search?keyword=xxx
-    @RequestMapping(path = "/search", method = RequestMethod.GET)
+    /**
+     * 搜索
+     * search?keword=xxx
+     * @param keyword 关键词
+     * @param page
+     * @param model
+     * @return
+     */
+    @GetMapping("/search")
     public String search(String keyword, Page page, Model model) {
-        // 搜索帖子
+        // 搜索帖子 (Spring 提供的 Page 当前页码从 0 开始计数)
         org.springframework.data.domain.Page<DiscussPost> searchResult =
-                elasticsearchService.searchDiscussPost(keyword, page.getCurrent() - 1, page.getLimit());
+                elasticsearchService.searchDiscussPost(keyword, page.getCurrent()-1, page.getLimit());
         // 聚合数据
         List<Map<String, Object>> discussPosts = new ArrayList<>();
         if (searchResult != null) {
@@ -50,14 +61,16 @@ public class SearchController implements CommunityConstant {
                 discussPosts.add(map);
             }
         }
+
         model.addAttribute("discussPosts", discussPosts);
         model.addAttribute("keyword", keyword);
 
-        // 分页信息
-        page.setPath("/search?keyword=" + keyword);
+        // 设置分页
+        page.setPath("/search?keyword="+ keyword);
         page.setRows(searchResult == null ? 0 : (int) searchResult.getTotalElements());
 
         return "/site/search";
     }
+
 
 }

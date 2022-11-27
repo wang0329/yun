@@ -3,15 +3,18 @@ package com.yun.entity;
 /**
  * 封装分页信息
  */
+/**
+ * 封装分页相关的信息
+ */
 public class Page {
 
-    // 当前页码
+    // 当前的页码
     private int current = 1;
-    // 显示上限
+    // 单页显示的帖子数量上限
     private int limit = 10;
-    // 数据总数(用于计算总页数)
+    // 帖子总数（用于计算总页数）
     private int rows;
-    // 查询路径(用于复用分页链接)
+    // 查询路径（用于复用分页链接, 因为我们不只在首页中有分页，其他界面也会有分页）
     private String path;
 
     public int getCurrent() {
@@ -29,7 +32,7 @@ public class Page {
     }
 
     public void setLimit(int limit) {
-        if (limit >= 1 && limit <= 100) {
+        if (current >= 1 && limit <= 100) {
             this.limit = limit;
         }
     }
@@ -53,32 +56,29 @@ public class Page {
     }
 
     /**
-     * 获取当前页的起始行
-     *
+     * 获取当前页的起始索引 offset
      * @return
      */
     public int getOffset() {
-        // current * limit - limit
-        return (current - 1) * limit;
+        return current * limit - limit;
     }
 
     /**
      * 获取总页数
-     *
      * @return
      */
     public int getTotal() {
-        // rows / limit [+1]
         if (rows % limit == 0) {
             return rows / limit;
-        } else {
+        }
+        else {
             return rows / limit + 1;
         }
     }
 
     /**
-     * 获取起始页码
-     *
+     * 获取分页栏起始页码
+     * 分页栏显示当前页码及其前后两页
      * @return
      */
     public int getFrom() {
@@ -87,8 +87,7 @@ public class Page {
     }
 
     /**
-     * 获取结束页码
-     *
+     * 获取分页栏结束页码
      * @return
      */
     public int getTo() {
@@ -96,5 +95,4 @@ public class Page {
         int total = getTotal();
         return to > total ? total : to;
     }
-
 }
